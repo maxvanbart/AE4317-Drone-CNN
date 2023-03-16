@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-image_name = 'DelFly_tulip.jpg'
+image_name = '242384873.jpg'
 im = cv2.imread(image_name)
 YUV = cv2.cvtColor(im, cv2.COLOR_BGR2YUV)
 X = np.ndarray.flatten(YUV)
@@ -17,6 +17,7 @@ for i in range(len(X)//6):
     UYVY.append(Y_)
 
 UYVY = np.ndarray.flatten(np.array(UYVY))
-print(X)
-print(UYVY)
+with np.printoptions(threshold=np.inf):
+        print(X)
+        print(UYVY)
 pass
