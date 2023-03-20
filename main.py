@@ -4,6 +4,7 @@ import cv2
 from layers.fullyConnected import Linear
 from layers.relu import ReLU
 
+
 def main(name):
     """Main function which does important things"""
     # # Take the imagename and turn it into the same format as the drone
@@ -32,7 +33,6 @@ def main(name):
     print(x)
     l2 = ReLU()
     print(l2.forward(x))
-
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 
 class Layer:
     def __init__(self):
-        pass
+        self.cache = None
 
     def forward(self, x):
         return x
