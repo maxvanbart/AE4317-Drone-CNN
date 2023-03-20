@@ -1,7 +1,5 @@
 
 
-
-
 class Layer:
     def __init__(self):
         pass
@@ -9,5 +7,5 @@ class Layer:
     def forward(self, x):
         return x
 
-    def backward(self):
+    def backward(self, dupstream):
         pass
