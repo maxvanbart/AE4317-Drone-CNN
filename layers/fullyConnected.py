@@ -15,7 +15,6 @@ class Linear(Layer):
         self.init_params()
 
         # Things for backward pass
-        self.cache = None
         self.weight_grad = None
         self.bias_grad = None
 
