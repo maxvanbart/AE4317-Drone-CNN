@@ -1,6 +1,61 @@
 import torch
 import torch.nn as nn
 from time import time
+import json
+import cv2
+import numpy as np
+from tqdm import tqdm
+
+w = 240
+h = 520
+
+
+class Image:
+    def __init__(self, name):
+        self.img_name = name
+        self.objects = []
+
+        self.x = None
+        self.y = None
+
+    def to_output(self):
+        pass
+
+    def to_input(self):
+        # Take the imagename and turn it into the same format as the drone
+        im = cv2.imread(f"captured_images/{self.img_name}")
+        yuv = cv2.cvtColor(im, cv2.COLOR_BGR2YUV)
+        X = np.ndarray.flatten(yuv)
+        uyvy = []
+        for i in range(len(X) // 6):
+            Y_ = [0, 0, 0, 0]
+            X_ = X[6 * i:6 * (i + 1)]
+            Y_[1] = int(X_[0])
+            Y_[3] = int(X_[3])
+            Y_[0] = int((int(X_[1]) + int(X_[4])) / 2)
+            Y_[2] = int((int(X_[2]) + int(X_[5])) / 2)
+            uyvy.append(Y_)
+        uyvy = np.ndarray.flatten(np.array(uyvy))
+
+        x = torch.zeros(1, 3, h, w)
+        for i in range(int(w * h / 4)):
+            pos = uyvy[4 * i: 4 * (i+1)]
+
+            p1_c = i * 2
+            p2_c = p1_c + 1
+            p1_x = p1_c % w
+            p1_y = p1_c // w
+            p2_x = p2_c % w
+            p2_y = p2_c // w
+
+            # Store information in matrix (y, u, v)
+            x[0, 0, p1_y, p1_x] = pos[1]
+            x[0, 1, p1_y, p1_x] = pos[0]
+            x[0, 2, p1_y, p1_x] = pos[2]
+            x[0, 0, p2_y, p2_x] = pos[3]
+            x[0, 1, p2_y, p2_x] = pos[0]
+            x[0, 2, p2_y, p2_x] = pos[2]
+        self.x = x
 
 
 class Net(nn.Module):
@@ -72,6 +127,35 @@ class Net(nn.Module):
 
 
 def main():
+    with open('data.json') as file:
+        data = json.load(file)
+
+    print(f"Data length: {len(data)}.")
+    # print(data[0]["Label"])
+
+    images = []
+    for i in tqdm(range(len(data))):
+        dat = data[i]
+
+        thing = Image(dat["External ID"])
+
+        for item in dat["Label"]["objects"]:
+            value = item["value"]
+            bbox = item["bbox"]
+            w = bbox["width"]
+            h = bbox["height"]
+            t = bbox["top"]
+            l = bbox["left"]
+            bbox["x"] = round(t + h / 2)
+            bbox["y"] = round(l + w / 2)
+
+            tup = (value, bbox)
+            thing.objects.append(tup)
+        images.append(thing)
+
+    for image in tqdm(images):
+        image.to_input()
+
     x = torch.zeros(1, 3, 520, 240)
     net = Net()
     t0 = time()
