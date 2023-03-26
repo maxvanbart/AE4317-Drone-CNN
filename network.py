@@ -56,6 +56,7 @@ class Image:
             x[0, 1, p2_y, p2_x] = pos[0]
             x[0, 2, p2_y, p2_x] = pos[2]
         self.x = x
+        pass
 
 
 class Net(nn.Module):
