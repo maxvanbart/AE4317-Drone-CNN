@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from time import time
 
 
 class Net(nn.Module):
@@ -27,6 +28,10 @@ class Net(nn.Module):
         self.l16 = nn.Conv2d(40, 150, 3, 1, 1)
         self.l17 = nn.Conv2d(150, 40, 1, 1, 0)
         self.l18 = nn.Conv2d(40, 150, 3, 1, 1)
+
+        # Not implemented in C layers
+        self.l19 = nn.Conv2d(150, 200, 1, 1, 0)
+        self.avg_pool = nn.AvgPool2d(200)
 
         self.layers = [self.max_pool,
                        self.l1,
@@ -69,7 +74,11 @@ class Net(nn.Module):
 def main():
     x = torch.zeros(1, 3, 520, 240)
     net = Net()
+    t0 = time()
     y = net.forward(x)
+    t1 = time()
+    dt = t1-t0
+    print(f"Forward pass took {dt} seconds.")
     print(f"Final shape: {y.shape}")
 
 
