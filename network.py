@@ -25,38 +25,43 @@ class Image:
         # Take the imagename and turn it into the same format as the drone
         im = cv2.imread(f"captured_images/{self.img_name}")
         yuv = cv2.cvtColor(im, cv2.COLOR_BGR2YUV)
-        X = np.ndarray.flatten(yuv)
-        uyvy = []
-        for i in range(len(X) // 6):
-            Y_ = [0, 0, 0, 0]
-            X_ = X[6 * i:6 * (i + 1)]
-            Y_[1] = int(X_[0])
-            Y_[3] = int(X_[3])
-            Y_[0] = int((int(X_[1]) + int(X_[4])) / 2)
-            Y_[2] = int((int(X_[2]) + int(X_[5])) / 2)
-            uyvy.append(Y_)
-        uyvy = np.ndarray.flatten(np.array(uyvy))
+        # X = np.ndarray.flatten(yuv)
+        # uyvy = []
+        # for i in range(len(X) // 6):
+        #     Y_ = [0, 0, 0, 0]
+        #     X_ = X[6 * i:6 * (i + 1)]
+        #     Y_[1] = int(X_[0])
+        #     Y_[3] = int(X_[3])
+        #     Y_[0] = int((int(X_[1]) + int(X_[4])) / 2)
+        #     Y_[2] = int((int(X_[2]) + int(X_[5])) / 2)
+        #     uyvy.append(Y_)
+        # uyvy = list(np.ndarray.flatten(np.array(uyvy)))
+        #
+        # t0 = time()
+        # # x = torch.zeros(1, 3, h, w)
+        # x = []
+        # for i in range(int(w * h / 2)):
+        #     if i % 120 == 0:
+        #         x.append([])
+        #     u = uyvy[4 * i]
+        #     y1 = uyvy[4 * i + 1]
+        #     v = uyvy[4 * i + 2]
+        #     y2 = uyvy[4 * i + 3]
+        #     p1 = [y1, u, v]
+        #     p2 = [y2, u, v]
+        #     x[-1] += [p1, p2]
+        #
+        # t1 = time()
+        # dt = t1 - t0
 
-        x = torch.zeros(1, 3, h, w)
-        for i in range(int(w * h / 4)):
-            pos = uyvy[4 * i: 4 * (i+1)]
+        # x = np.array(x)
+        # x = np.swapaxes(x, 0, 2)
+        yuv = np.swapaxes(yuv, 0, 2)
+        yuv = torch.Tensor(np.swapaxes(yuv, 1, 2))
+        yuv = yuv[None, :, :, :]
+        # x = torch.Tensor(x)
 
-            p1_c = i * 2
-            p2_c = p1_c + 1
-            p1_x = p1_c % w
-            p1_y = p1_c // w
-            p2_x = p2_c % w
-            p2_y = p2_c // w
-
-            # Store information in matrix (y, u, v)
-            x[0, 0, p1_y, p1_x] = pos[1]
-            x[0, 1, p1_y, p1_x] = pos[0]
-            x[0, 2, p1_y, p1_x] = pos[2]
-            x[0, 0, p2_y, p2_x] = pos[3]
-            x[0, 1, p2_y, p2_x] = pos[0]
-            x[0, 2, p2_y, p2_x] = pos[2]
-        self.x = x
-        pass
+        self.x = yuv / 255
 
 
 class Net(nn.Module):
@@ -86,8 +91,9 @@ class Net(nn.Module):
         self.l18 = nn.Conv2d(40, 150, 3, 1, 1)
 
         # Not implemented in C layers
-        self.l19 = nn.Conv2d(150, 200, 1, 1, 0)
-        self.avg_pool = nn.AvgPool2d(200)
+        self.l19 = nn.Conv2d(150, 500, 1, 1, 0)
+        self.avg_pool = nn.AvgPool2d((8, 3))
+        self.softmax = nn.Softmax(1)
 
         self.layers = [self.max_pool,
                        self.l1,
@@ -118,12 +124,15 @@ class Net(nn.Module):
                        self.relu,
                        self.max_pool,
                        self.l14,
-                       self.relu]
+                       self.relu,
+
+                       self.l19,
+                       self.avg_pool,
+                       self.softmax]
 
     def forward(self, x):
         for layer in self.layers:
             x = layer.forward(x)
-            print(x.shape)
         return x
 
 
@@ -135,7 +144,8 @@ def main():
     # print(data[0]["Label"])
 
     images = []
-    for i in tqdm(range(len(data))):
+    # for i in tqdm(range(len(data))):
+    for i in tqdm(range(20)):
         dat = data[i]
 
         thing = Image(dat["External ID"])
