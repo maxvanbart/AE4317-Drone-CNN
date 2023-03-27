@@ -19,119 +19,127 @@ class Image:
         self.y = None
 
     def to_output(self):
-        pass
+        # print(f"### {self.img_name} ###")
+        self.y = [0] * 352
+        for thing in self.objects:
+            i = int(thing[1]['x']) // 65
+            j = int(thing[1]['y']) // 60
+            x = thing[1]['x'] / h
+            y = thing[1]['y'] / w
+
+            pos = (4 * i + j) * 11
+
+            # Warning: x and y are kinda flipped from their usual perspective but works if you turn image 90 degs
+            self.y[pos] = x
+            self.y[pos + 1] = y
+            self.y[pos + 2] = thing[1]['width']
+            self.y[pos + 3] = thing[1]['height']
+            self.y[pos + 4] = 1
+            self.y[pos + 5] = 0
+            self.y[pos + 6] = 0
+            self.y[pos + 7] = 0
+            self.y[pos + 8] = 0
+            self.y[pos + 9] = 0
+            self.y[pos + 10] = 0
+
+            match thing[0]:
+                case 'pillar':
+                    self.y[pos + 5] = 1
+                case 'black_board':
+                    self.y[pos + 6] = 1
+                case 'white_board':
+                    self.y[pos + 7] = 1
+                case 'plant':
+                    self.y[pos + 8] = 1
+                case 'forest':
+                    self.y[pos + 9] = 1
+                case 'q_rcode':
+                    self.y[pos + 10] = 1
+        self.y = torch.Tensor(self.y)
 
     def to_input(self):
         # Take the imagename and turn it into the same format as the drone
         im = cv2.imread(f"captured_images/{self.img_name}")
         yuv = cv2.cvtColor(im, cv2.COLOR_BGR2YUV)
-        # X = np.ndarray.flatten(yuv)
-        # uyvy = []
-        # for i in range(len(X) // 6):
-        #     Y_ = [0, 0, 0, 0]
-        #     X_ = X[6 * i:6 * (i + 1)]
-        #     Y_[1] = int(X_[0])
-        #     Y_[3] = int(X_[3])
-        #     Y_[0] = int((int(X_[1]) + int(X_[4])) / 2)
-        #     Y_[2] = int((int(X_[2]) + int(X_[5])) / 2)
-        #     uyvy.append(Y_)
-        # uyvy = list(np.ndarray.flatten(np.array(uyvy)))
-        #
-        # t0 = time()
-        # # x = torch.zeros(1, 3, h, w)
-        # x = []
-        # for i in range(int(w * h / 2)):
-        #     if i % 120 == 0:
-        #         x.append([])
-        #     u = uyvy[4 * i]
-        #     y1 = uyvy[4 * i + 1]
-        #     v = uyvy[4 * i + 2]
-        #     y2 = uyvy[4 * i + 3]
-        #     p1 = [y1, u, v]
-        #     p2 = [y2, u, v]
-        #     x[-1] += [p1, p2]
-        #
-        # t1 = time()
-        # dt = t1 - t0
-
-        # x = np.array(x)
-        # x = np.swapaxes(x, 0, 2)
         yuv = np.swapaxes(yuv, 0, 2)
         yuv = torch.Tensor(np.swapaxes(yuv, 1, 2))
         yuv = yuv[None, :, :, :]
-        # x = torch.Tensor(x)
 
         self.x = yuv / 255
 
 
 class Net(nn.Module):
     def __init__(self):
-
         super().__init__()
-        self.relu = nn.ReLU()
-        self.max_pool = nn.MaxPool2d(2)
+        self.layers1 = [nn.Conv2d(3, 192, 7, stride=2, padding=3),
+                        nn.LeakyReLU(),
+                        nn.MaxPool2d(2),
 
-        self.l1 = nn.Conv2d(3, 8, 3, 1, 1)
-        self.l2 = nn.Conv2d(8, 12, 3, 1, 1)
-        self.l3 = nn.Conv2d(12, 20, 3, 1, 1)
-        self.l4 = nn.Conv2d(20, 12, 1, 1, 0)
-        self.l5 = nn.Conv2d(12, 20, 3, 1, 1)
-        self.l6 = nn.Conv2d(20, 40, 3, 1, 1)
-        self.l7 = nn.Conv2d(40, 20, 1, 1, 0)
-        self.l8 = nn.Conv2d(20, 40, 3, 1, 1)
-        self.l9 = nn.Conv2d(40, 100, 3, 1, 1)
-        self.l10 = nn.Conv2d(100, 40, 1, 1, 0)
-        self.l11 = nn.Conv2d(40, 100, 3, 1, 1)
-        self.l12 = nn.Conv2d(100, 40, 1, 1, 0)
-        self.l13 = nn.Conv2d(40, 100, 3, 1, 1)
-        self.l14 = nn.Conv2d(100, 150, 3, 1, 1)
-        self.l15 = nn.Conv2d(150, 40, 1, 1, 0)
-        self.l16 = nn.Conv2d(40, 150, 3, 1, 1)
-        self.l17 = nn.Conv2d(150, 40, 1, 1, 0)
-        self.l18 = nn.Conv2d(40, 150, 3, 1, 1)
+                        nn.Conv2d(192, 256, 3, padding=1),
+                        nn.LeakyReLU(),
+                        nn.MaxPool2d(2),
 
-        # Not implemented in C layers
-        self.l19 = nn.Conv2d(150, 500, 1, 1, 0)
-        self.avg_pool = nn.AvgPool2d((8, 3))
-        self.softmax = nn.Softmax(1)
+                        nn.Conv2d(256, 128, 1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(128, 256, 3, padding=1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(256, 256, 1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(256, 512, 3, padding=1),
+                        nn.MaxPool2d(2),
 
-        self.layers = [self.max_pool,
-                       self.l1,
-                       self.relu,
-                       self.max_pool,
-                       self.l2,
-                       self.relu,
-                       self.max_pool,
-                       self.l3,
-                       self.relu,
-                       self.l4,
-                       self.relu,
-                       self.l5,
-                       self.relu,
-                       self.max_pool,
-                       self.l6,
-                       self.relu,
-                       self.l7,
-                       self.relu,
-                       self.l8,
-                       self.relu,
-                       self.max_pool,
-                       self.l9,
-                       self.relu,
-                       self.l10,
-                       self.relu,
-                       self.l13,
-                       self.relu,
-                       self.max_pool,
-                       self.l14,
-                       self.relu,
+                        nn.Conv2d(512, 256, 1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(256, 512, 3, padding=1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(512, 256, 1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(256, 512, 3, padding=1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(512, 256, 1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(256, 512, 3, padding=1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(512, 256, 1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(256, 512, 3, padding=1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(512, 512, 1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(512, 1024, 3, padding=1),
+                        nn.LeakyReLU(),
+                        nn.MaxPool2d(2),
 
-                       self.l19,
-                       self.avg_pool,
-                       self.softmax]
+                        nn.Conv2d(1024, 512, 1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(512, 1024, 3, padding=1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(1024, 512, 1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(512, 1024, 3, padding=1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(1024, 1024, 3, padding=1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(1024, 1024, 3, stride=2, padding=1),
+                        nn.LeakyReLU(),
+
+                        nn.Conv2d(1024, 1024, 3, padding=1),
+                        nn.LeakyReLU(),
+                        nn.Conv2d(1024, 1024, 3, padding=1),
+                        nn.LeakyReLU()]
+        self.layers2 = [nn.Linear(32768, 4096),
+                        nn.LeakyReLU(),
+                        nn.Linear(4096, 11 * 8 * 4),
+                        nn.LeakyReLU()]
 
     def forward(self, x):
-        for layer in self.layers:
+        for layer in self.layers1:
+            print(x.shape)
+            x = layer.forward(x)
+
+        x = torch.flatten(x)
+        for layer in self.layers2:
+            print(x.shape)
             x = layer.forward(x)
         return x
 
@@ -166,13 +174,14 @@ def main():
 
     for image in tqdm(images):
         image.to_input()
+        image.to_output()
 
     x = torch.zeros(1, 3, 520, 240)
     net = Net()
     t0 = time()
     y = net.forward(x)
     t1 = time()
-    dt = t1-t0
+    dt = t1 - t0
     print(f"Forward pass took {dt} seconds.")
     print(f"Final shape: {y.shape}")
 
