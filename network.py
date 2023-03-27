@@ -92,8 +92,45 @@ class Net(nn.Module):
         self.r6 = nn.LeakyReLU()
         self.mp3 = nn.MaxPool2d(2)
 
+        self.c7 = nn.Conv2d(512, 256, 1)
+        self.r7 = nn.LeakyReLU()
+        self.c8 = nn.Conv2d(256, 512, 3, padding=1)
+        self.r8 = nn.LeakyReLU()
+        self.c9 = nn.Conv2d(512, 256, 1)
+        self.r9 = nn.LeakyReLU()
+        self.c10 = nn.Conv2d(256, 512, 3, padding=1)
+        self.r10 = nn.LeakyReLU()
+        self.c11 = nn.Conv2d(512, 256, 1)
+        self.r11 = nn.LeakyReLU()
+        self.c12 = nn.Conv2d(256, 512, 3, padding=1)
+        self.r12 = nn.LeakyReLU()
+        self.c13 = nn.Conv2d(512, 256, 1)
+        self.r13 = nn.LeakyReLU()
+        self.c14 = nn.Conv2d(256, 512, 3, padding=1)
+        self.r14 = nn.LeakyReLU()
+        self.c15 = nn.Conv2d(512, 512, 1)
+        self.r15 = nn.LeakyReLU()
+        self.c16 = nn.Conv2d(512, 1024, 3, padding=1)
+        self.r16 = nn.LeakyReLU()
+        self.mp4 = nn.MaxPool2d(2)
 
+        self.c17 = nn.Conv2d(1024, 512, 1)
+        self.r17 = nn.LeakyReLU()
+        self.c18 = nn.Conv2d(512, 1024, 3, padding=1)
+        self.r18 = nn.LeakyReLU()
+        self.c19 = nn.Conv2d(1024, 512, 1)
+        self.r19 = nn.LeakyReLU()
+        self.c20 = nn.Conv2d(512, 1024, 3, padding=1)
+        self.r20 = nn.LeakyReLU()
+        self.c21 = nn.Conv2d(1024, 1024, 3, padding=1)
+        self.r21 = nn.LeakyReLU()
+        self.c22 = nn.Conv2d(1024, 1024, 3, stride=2, padding=1)
+        self.r22 = nn.LeakyReLU()
 
+        self.c23 = nn.Conv2d(1024, 1024, 3, padding=1)
+        self.r23 = nn.LeakyReLU()
+        self.c24 = nn.Conv2d(1024, 1024, 3, padding=1)
+        self.r24 = nn.LeakyReLU()
 
         self.layers1 = [self.c1,
                         self.r1,
@@ -113,49 +150,55 @@ class Net(nn.Module):
                         self.r6,
                         self.mp3,
 
-                        nn.Conv2d(512, 256, 1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(256, 512, 3, padding=1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(512, 256, 1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(256, 512, 3, padding=1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(512, 256, 1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(256, 512, 3, padding=1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(512, 256, 1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(256, 512, 3, padding=1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(512, 512, 1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(512, 1024, 3, padding=1),
-                        nn.LeakyReLU(),
-                        nn.MaxPool2d(2),
+                        self.c7,
+                        self.r7,
+                        self.c8,
+                        self.r8,
+                        self.c9,
+                        self.r9,
+                        self.c10,
+                        self.r10,
+                        self.c11,
+                        self.r11,
+                        self.c12,
+                        self.r12,
+                        self.c13,
+                        self.r13,
+                        self.c14,
+                        self.r14,
+                        self.c15,
+                        self.r15,
+                        self.c16,
+                        self.r16,
+                        self.mp4,
 
-                        nn.Conv2d(1024, 512, 1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(512, 1024, 3, padding=1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(1024, 512, 1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(512, 1024, 3, padding=1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(1024, 1024, 3, padding=1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(1024, 1024, 3, stride=2, padding=1),
-                        nn.LeakyReLU(),
+                        self.c17,
+                        self.r17,
+                        self.c18,
+                        self.r18,
+                        self.c19,
+                        self.r19,
+                        self.c20,
+                        self.r20,
+                        self.c21,
+                        self.r21,
+                        self.c22,
+                        self.r22,
 
-                        nn.Conv2d(1024, 1024, 3, padding=1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(1024, 1024, 3, padding=1),
-                        nn.LeakyReLU()]
-        self.layers2 = [nn.Linear(32768, 4096),
-                        nn.LeakyReLU(),
-                        nn.Linear(4096, 11 * 8 * 4),
-                        nn.LeakyReLU()]
+                        self.c23,
+                        self.r23,
+                        self.c24,
+                        self.r24]
+
+        self.l1 = nn.Linear(32768, 4096)
+        self.r25 = nn.LeakyReLU()
+        self.l2 = nn.Linear(4096, 11 * 8 * 4)
+        self.r26 = nn.LeakyReLU()
+
+        self.layers2 = [self.l1,
+                        self.r25,
+                        self.l2,
+                        self.r26]
 
     def forward(self, x):
         for layer in self.layers1:
@@ -216,8 +259,8 @@ def main():
     print(f"Final shape: {y.shape}")
 
     params = list(net.parameters())
-    print(params)
-    print(len(params))
+    # print(params)
+    # print(len(params))
     # print(params[0].size())
 
     criterion = nn.CrossEntropyLoss()
