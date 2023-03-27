@@ -38,7 +38,7 @@ for i in range(boxes):
     print(i)
     out_arr = output[i*11:i*boxes+11]
     print(out_arr)
-    dims = out_arr[:5]
+    dims = np.array(out_arr[:5])
     probabilities = out_arr[5:]
     nom = np.exp(probabilities)
     denom = sum(np.exp(probabilities))
