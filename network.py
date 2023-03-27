@@ -1,5 +1,8 @@
 import torch
 import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
+
 from time import time
 import json
 import cv2
@@ -71,22 +74,44 @@ class Image:
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
-        self.layers1 = [nn.Conv2d(3, 192, 7, stride=2, padding=3),
-                        nn.LeakyReLU(),
-                        nn.MaxPool2d(2),
+        self.c1 = nn.Conv2d(3, 192, 7, stride=2, padding=3)
+        self.r1 = nn.LeakyReLU()
+        self.mp1 = nn.MaxPool2d(2)
 
-                        nn.Conv2d(192, 256, 3, padding=1),
-                        nn.LeakyReLU(),
-                        nn.MaxPool2d(2),
+        self.c2 = nn.Conv2d(192, 256, 3, padding=1)
+        self.r2 = nn.LeakyReLU()
+        self.mp2 = nn.MaxPool2d(2)
 
-                        nn.Conv2d(256, 128, 1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(128, 256, 3, padding=1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(256, 256, 1),
-                        nn.LeakyReLU(),
-                        nn.Conv2d(256, 512, 3, padding=1),
-                        nn.MaxPool2d(2),
+        self.c3 = nn.Conv2d(256, 128, 1)
+        self.r3 = nn.LeakyReLU()
+        self.c4 = nn.Conv2d(128, 256, 3, padding=1)
+        self.r4 = nn.LeakyReLU()
+        self.c5 = nn.Conv2d(256, 256, 1)
+        self.r5 = nn.LeakyReLU()
+        self.c6 = nn.Conv2d(256, 512, 3, padding=1)
+        self.r6 = nn.LeakyReLU()
+        self.mp3 = nn.MaxPool2d(2)
+
+
+
+
+        self.layers1 = [self.c1,
+                        self.r1,
+                        self.mp1,
+
+                        self.c2,
+                        self.r2,
+                        self.mp2,
+
+                        self.c3,
+                        self.r3,
+                        self.c4,
+                        self.r4,
+                        self.c5,
+                        self.r5,
+                        self.c6,
+                        self.r6,
+                        self.mp3,
 
                         nn.Conv2d(512, 256, 1),
                         nn.LeakyReLU(),
@@ -143,13 +168,16 @@ class Net(nn.Module):
             x = layer.forward(x)
         return x
 
+    # def backward(self, dy):
+    #
+
 
 def main():
+    # Load labelbox json file for hand drawn boxes
     with open('data.json') as file:
         data = json.load(file)
 
     print(f"Data length: {len(data)}.")
-    # print(data[0]["Label"])
 
     images = []
     # for i in tqdm(range(len(data))):
@@ -172,10 +200,12 @@ def main():
             thing.objects.append(tup)
         images.append(thing)
 
+    # Generate all the image input and output data
     for image in tqdm(images):
         image.to_input()
         image.to_output()
 
+    # Make a net to train based on the yolov1 architecture
     x = torch.zeros(1, 3, 520, 240)
     net = Net()
     t0 = time()
@@ -184,6 +214,14 @@ def main():
     dt = t1 - t0
     print(f"Forward pass took {dt} seconds.")
     print(f"Final shape: {y.shape}")
+
+    params = list(net.parameters())
+    print(params)
+    print(len(params))
+    # print(params[0].size())
+
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
 
 if __name__ == "__main__":
