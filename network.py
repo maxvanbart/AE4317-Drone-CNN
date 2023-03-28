@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
 
 from time import time
 import json
@@ -202,12 +203,12 @@ class Net(nn.Module):
 
     def forward(self, x):
         for layer in self.layers1:
-            print(x.shape)
+            # print(x.shape)
             x = layer.forward(x)
 
         x = torch.flatten(x)
         for layer in self.layers2:
-            print(x.shape)
+            # print(x.shape)
             x = layer.forward(x)
         return x
 
@@ -224,7 +225,7 @@ def main():
 
     images = []
     # for i in tqdm(range(len(data))):
-    for i in tqdm(range(20)):
+    for i in tqdm(range(1000)):
         dat = data[i]
 
         thing = Image(dat["External ID"])
@@ -266,25 +267,30 @@ def main():
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-    for epoch in range(2):
+    losses = []
+
+    epochs = 10
+    for epoch in tqdm(range(epochs)):
         running_loss = 0.0
         for i, data in enumerate(images, 0):
-            inputs, labels = data
+            x = data.x
+            y_true = data.y
 
             # zero the parameter gradients
             optimizer.zero_grad()
-
             # forward + backward + optimize
-            outputs = net(inputs)
-            loss = criterion(outputs, labels)
+            y = net(x)
+            loss = criterion(y, y_true)
             loss.backward()
             optimizer.step()
-
             # print statistics
             running_loss += loss.item()
-            if i % 2000 == 1999:
-                print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2000:.3f}')
-                running_loss = 0.0
+
+        losses.append(running_loss)
+
+
+    plt.plot(range(epochs), losses)
+    plt.show()
 
 
 if __name__ == "__main__":
