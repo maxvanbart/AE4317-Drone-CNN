@@ -19,6 +19,7 @@ else:
     dev = "cpu"
 device = torch.device(dev)
 
+
 class Image:
     def __init__(self, name):
         self.img_name = name
@@ -234,8 +235,8 @@ def main():
 
     images = []
     # for i in tqdm(range(len(data))):
-    #for j in range(10):
-    for i in tqdm(range(100)):
+    # for j in range(10):
+    for i in tqdm(range(1)):
         dat = data[i]
 
         thing = Image(dat["External ID"])
@@ -269,32 +270,58 @@ def main():
     print(f"Forward pass took {dt} seconds.")
     print(f"Final shape: {y.shape}")
 
-    params = list(net.parameters())
-    # print(params)
-    # print(len(params))
-    # print(params[0].size())
-
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.00005, momentum=0.9)
 
     losses = []
 
-    epochs = 50
+    epochs = 2
     for epoch in range(epochs):
+        print(f'Starting epoch {epoch}.')
         running_loss = 0.0
-        for i, data in tqdm(enumerate(images, 0)):
-            x = data.x
-            y_true = data.y
+        for j in range(10):
+            # Clear images from memory
+            images = []
+            # Load new images into memory
+            for i in tqdm(range(100*j, 100*j+100)):
+                dat = data[i]
 
-            # zero the parameter gradients
-            optimizer.zero_grad()
-            # forward + backward + optimize
-            y = net(x)
-            loss = criterion(y, y_true)
-            loss.backward()
-            optimizer.step()
-            # print statistics
-            running_loss += loss.item()
+                thing = Image(dat["External ID"])
+
+                for item in dat["Label"]["objects"]:
+                    value = item["value"]
+                    bbox = item["bbox"]
+                    w = bbox["width"]
+                    h = bbox["height"]
+                    t = bbox["top"]
+                    l = bbox["left"]
+                    bbox["x"] = round(t + h / 2)
+                    bbox["y"] = round(l + w / 2)
+
+                    tup = (value, bbox)
+                    thing.objects.append(tup)
+                images.append(thing)
+
+            # Make image data
+            for image in tqdm(images):
+                image.to_input()
+                image.to_output()
+
+
+            # Train network with loaded images
+            for i, data_ in tqdm(enumerate(images, 0)):
+                x = data_.x
+                y_true = data_.y
+
+                # zero the parameter gradients
+                optimizer.zero_grad()
+                # forward + backward + optimize
+                y = net(x)
+                loss = criterion(y, y_true)
+                loss.backward()
+                optimizer.step()
+                # print statistics
+                running_loss += loss.item()
 
         losses.append(running_loss)
         print(running_loss, epoch)
