@@ -222,8 +222,49 @@ class Net(nn.Module):
         for layer in self.layers1 + self.layers2:
             layer.reset_parameters()
 
-    # def backward(self, dy):
-    #
+    def export_weights(self):
+        for i, layer in enumerate(self.layers1):
+            # Save layer weights to csv
+            if hasattr(layer, 'weight'):
+                print(f"Convolutional layer {i} has weights.")
+                file = ""
+                weight = layer.weight.detach().numpy()
+
+                # Reduce dimension to three
+                for j in range(weight.shape[0]):
+                    kernel = weight[j, :, :, :]
+                    kernel = np.ndarray.flatten(kernel)
+                    kernel_str = ""
+                    for item in kernel:
+                        kernel_str += f"{item},"
+                    kernel_str.rstrip(',')
+                    kernel_str += '\n'
+                    file += kernel_str
+
+                with open(f"weights/weight{i}.csv", 'w') as f:
+                    f.write(file)
+
+            # Save biases to csv
+            if hasattr(layer, 'bias'):
+                print(f"Convolutional layer {i} has biases")
+                bias = layer.bias.detach().numpy()
+                np.savetxt(f"weights/bias{i}.csv", bias, delimiter=",")
+                # tensor_to_dat(bias, f"weights/bias{i}.csv")
+
+        for i, layer in enumerate(self.layers2):
+            # Save linear weights to csv
+            if hasattr(layer, 'weight'):
+                print(f"Linear layer {i + len(self.layers1)} has weights")
+                weight = layer.weight.detach().numpy()
+                np.savetxt(f"weights/weight{i + len(self.layers1)}.csv", np.ndarray.flatten(weight), delimiter=",")
+                # tensor_to_dat(bias, f"weights/bias{i}.csv")
+
+            # Save biases to csv
+            if hasattr(layer, 'bias'):
+                print(f"Linear layer {i + len(self.layers1)} has biases")
+                bias = layer.bias.detach().numpy()
+                np.savetxt(f"weights/bias{i + len(self.layers1)}.csv", bias, delimiter=",")
+                # tensor_to_dat(bias, f"weights/bias{i}.csv")
 
 
 def main():
@@ -270,8 +311,13 @@ def main():
     print(f"Forward pass took {dt} seconds.")
     print(f"Final shape: {y.shape}")
 
+    # Optimizer and loss function
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.00005, momentum=0.9)
+
+    # Save the model parameters to a data file
+    # net.export_weights()
+    # torch.save(net.state_dict(), "weights/model.dat")
 
     losses = []
 
