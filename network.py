@@ -13,6 +13,11 @@ from tqdm import tqdm
 w = 240
 h = 520
 
+if torch.cuda.is_available():
+    dev = "cuda:0"
+else:
+    dev = "cpu"
+device = torch.device(dev)
 
 class Image:
     def __init__(self, name):
@@ -59,7 +64,7 @@ class Image:
                     self.y[pos + 9] = 1
                 case 'q_rcode':
                     self.y[pos + 10] = 1
-        self.y = torch.Tensor(self.y)
+        self.y = torch.Tensor(self.y).to(device)
 
     def to_input(self):
         # Take the imagename and turn it into the same format as the drone
@@ -69,68 +74,68 @@ class Image:
         yuv = torch.Tensor(np.swapaxes(yuv, 1, 2))
         yuv = yuv[None, :, :, :]
 
-        self.x = yuv / 255
+        self.x = (yuv / 255).to(device)
 
 
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
-        self.c1 = nn.Conv2d(3, 192, 7, stride=2, padding=3)
+        self.c1 = nn.Conv2d(3, 192, 7, stride=2, padding=3, device=device)
         self.r1 = nn.LeakyReLU()
         self.mp1 = nn.MaxPool2d(2)
 
-        self.c2 = nn.Conv2d(192, 256, 3, padding=1)
+        self.c2 = nn.Conv2d(192, 256, 3, padding=1, device=device)
         self.r2 = nn.LeakyReLU()
         self.mp2 = nn.MaxPool2d(2)
 
-        self.c3 = nn.Conv2d(256, 128, 1)
+        self.c3 = nn.Conv2d(256, 128, 1, device=device)
         self.r3 = nn.LeakyReLU()
-        self.c4 = nn.Conv2d(128, 256, 3, padding=1)
+        self.c4 = nn.Conv2d(128, 256, 3, padding=1, device=device)
         self.r4 = nn.LeakyReLU()
-        self.c5 = nn.Conv2d(256, 256, 1)
+        self.c5 = nn.Conv2d(256, 256, 1, device=device)
         self.r5 = nn.LeakyReLU()
-        self.c6 = nn.Conv2d(256, 512, 3, padding=1)
+        self.c6 = nn.Conv2d(256, 512, 3, padding=1, device=device)
         self.r6 = nn.LeakyReLU()
         self.mp3 = nn.MaxPool2d(2)
 
-        self.c7 = nn.Conv2d(512, 256, 1)
+        self.c7 = nn.Conv2d(512, 256, 1, device=device)
         self.r7 = nn.LeakyReLU()
-        self.c8 = nn.Conv2d(256, 512, 3, padding=1)
+        self.c8 = nn.Conv2d(256, 512, 3, padding=1, device=device)
         self.r8 = nn.LeakyReLU()
-        self.c9 = nn.Conv2d(512, 256, 1)
+        self.c9 = nn.Conv2d(512, 256, 1, device=device)
         self.r9 = nn.LeakyReLU()
-        self.c10 = nn.Conv2d(256, 512, 3, padding=1)
+        self.c10 = nn.Conv2d(256, 512, 3, padding=1, device=device)
         self.r10 = nn.LeakyReLU()
-        self.c11 = nn.Conv2d(512, 256, 1)
+        self.c11 = nn.Conv2d(512, 256, 1, device=device)
         self.r11 = nn.LeakyReLU()
-        self.c12 = nn.Conv2d(256, 512, 3, padding=1)
+        self.c12 = nn.Conv2d(256, 512, 3, padding=1, device=device)
         self.r12 = nn.LeakyReLU()
-        self.c13 = nn.Conv2d(512, 256, 1)
+        self.c13 = nn.Conv2d(512, 256, 1, device=device)
         self.r13 = nn.LeakyReLU()
-        self.c14 = nn.Conv2d(256, 512, 3, padding=1)
+        self.c14 = nn.Conv2d(256, 512, 3, padding=1, device=device)
         self.r14 = nn.LeakyReLU()
-        self.c15 = nn.Conv2d(512, 512, 1)
+        self.c15 = nn.Conv2d(512, 512, 1, device=device)
         self.r15 = nn.LeakyReLU()
-        self.c16 = nn.Conv2d(512, 1024, 3, padding=1)
+        self.c16 = nn.Conv2d(512, 1024, 3, padding=1, device=device)
         self.r16 = nn.LeakyReLU()
         self.mp4 = nn.MaxPool2d(2)
 
-        self.c17 = nn.Conv2d(1024, 512, 1)
+        self.c17 = nn.Conv2d(1024, 512, 1, device=device)
         self.r17 = nn.LeakyReLU()
-        self.c18 = nn.Conv2d(512, 1024, 3, padding=1)
+        self.c18 = nn.Conv2d(512, 1024, 3, padding=1, device=device)
         self.r18 = nn.LeakyReLU()
-        self.c19 = nn.Conv2d(1024, 512, 1)
+        self.c19 = nn.Conv2d(1024, 512, 1, device=device)
         self.r19 = nn.LeakyReLU()
-        self.c20 = nn.Conv2d(512, 1024, 3, padding=1)
+        self.c20 = nn.Conv2d(512, 1024, 3, padding=1, device=device)
         self.r20 = nn.LeakyReLU()
-        self.c21 = nn.Conv2d(1024, 1024, 3, padding=1)
+        self.c21 = nn.Conv2d(1024, 1024, 3, padding=1, device=device)
         self.r21 = nn.LeakyReLU()
-        self.c22 = nn.Conv2d(1024, 1024, 3, stride=2, padding=1)
+        self.c22 = nn.Conv2d(1024, 1024, 3, stride=2, padding=1, device=device)
         self.r22 = nn.LeakyReLU()
 
-        self.c23 = nn.Conv2d(1024, 1024, 3, padding=1)
+        self.c23 = nn.Conv2d(1024, 1024, 3, padding=1, device=device)
         self.r23 = nn.LeakyReLU()
-        self.c24 = nn.Conv2d(1024, 1024, 3, padding=1)
+        self.c24 = nn.Conv2d(1024, 1024, 3, padding=1, device=device)
         self.r24 = nn.LeakyReLU()
 
         self.layers1 = [self.c1,
@@ -191,9 +196,9 @@ class Net(nn.Module):
                         self.c24,
                         self.r24]
 
-        self.l1 = nn.Linear(32768, 4096)
+        self.l1 = nn.Linear(32768, 4096, device=device)
         self.r25 = nn.LeakyReLU()
-        self.l2 = nn.Linear(4096, 11 * 8 * 4)
+        self.l2 = nn.Linear(4096, 11 * 8 * 4, device=device)
         self.r26 = nn.LeakyReLU()
 
         self.layers2 = [self.l1,
@@ -212,6 +217,10 @@ class Net(nn.Module):
             x = layer.forward(x)
         return x
 
+    def init(self):
+        for layer in self.layers1 + self.layers2:
+            layer.reset_parameters()
+
     # def backward(self, dy):
     #
 
@@ -225,7 +234,8 @@ def main():
 
     images = []
     # for i in tqdm(range(len(data))):
-    for i in tqdm(range(1000)):
+    #for j in range(10):
+    for i in tqdm(range(100)):
         dat = data[i]
 
         thing = Image(dat["External ID"])
@@ -250,7 +260,7 @@ def main():
         image.to_output()
 
     # Make a net to train based on the yolov1 architecture
-    x = torch.zeros(1, 3, 520, 240)
+    x = torch.zeros(1, 3, 520, 240).to(device)
     net = Net()
     t0 = time()
     y = net.forward(x)
@@ -265,14 +275,14 @@ def main():
     # print(params[0].size())
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(net.parameters(), lr=0.00005, momentum=0.9)
 
     losses = []
 
-    epochs = 10
-    for epoch in tqdm(range(epochs)):
+    epochs = 50
+    for epoch in range(epochs):
         running_loss = 0.0
-        for i, data in enumerate(images, 0):
+        for i, data in tqdm(enumerate(images, 0)):
             x = data.x
             y_true = data.y
 
@@ -287,8 +297,9 @@ def main():
             running_loss += loss.item()
 
         losses.append(running_loss)
+        print(running_loss, epoch)
 
-
+    print(losses)
     plt.plot(range(epochs), losses)
     plt.show()
 
