@@ -353,7 +353,6 @@ def main():
                 image.to_input()
                 image.to_output()
 
-
             # Train network with loaded images
             for i, data_ in tqdm(enumerate(images, 0)):
                 x = data_.x
@@ -373,6 +372,7 @@ def main():
         print(running_loss, epoch)
 
     print(losses)
+    torch.save(net.state_dict(), "model/yolo1")
     plt.plot(range(epochs), losses)
     plt.show()
 
