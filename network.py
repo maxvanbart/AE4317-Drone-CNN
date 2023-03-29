@@ -52,19 +52,18 @@ class Image:
             self.y[pos + 9] = 0
             self.y[pos + 10] = 0
 
-            match thing[0]:
-                case 'pillar':
-                    self.y[pos + 5] = 1
-                case 'black_board':
-                    self.y[pos + 6] = 1
-                case 'white_board':
-                    self.y[pos + 7] = 1
-                case 'plant':
-                    self.y[pos + 8] = 1
-                case 'forest':
-                    self.y[pos + 9] = 1
-                case 'q_rcode':
-                    self.y[pos + 10] = 1
+            if thing[0] == 'pillar':
+                self.y[pos + 5] = 1
+            elif thing[0] == 'black_board':
+                self.y[pos + 6] = 1
+            elif thing[0] == 'white_board':
+                self.y[pos + 7] = 1
+            elif thing[0] == 'plant':
+                self.y[pos + 8] = 1
+            elif thing[0] == 'forest':
+                self.y[pos + 9] = 1
+            elif thing[0] == 'q_rcode':
+                self.y[pos + 10] = 1
         self.y = torch.Tensor(self.y).to(device)
 
     def to_input(self):
@@ -321,15 +320,15 @@ def main():
 
     losses = []
 
-    epochs = 2
+    epochs = 12
     for epoch in range(epochs):
         print(f'Starting epoch {epoch}.')
         running_loss = 0.0
-        for j in range(10):
+        for j in range(32):
             # Clear images from memory
             images = []
             # Load new images into memory
-            for i in tqdm(range(100*j, 100*j+100)):
+            for i in tqdm(range(200*j, 200*j+200)):
                 dat = data[i]
 
                 thing = Image(dat["External ID"])

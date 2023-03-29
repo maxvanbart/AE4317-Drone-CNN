@@ -1,6 +1,7 @@
 import torch
 from tqdm import tqdm
 import json
+import numpy as np
 
 from network import Net, Image
 
@@ -20,7 +21,7 @@ def main():
     images = []
     # for i in tqdm(range(len(data))):
     # for j in range(10):
-    for i in tqdm(range(1000, 1100)):
+    for i in tqdm(range(1600, 1700)):
         dat = data[i]
 
         thing = Image(dat["External ID"])
@@ -44,7 +45,22 @@ def main():
         image.to_input()
         image.to_output()
 
-    y_pred = net(images[0])
+    n = 90
+    y_pred = net(images[n].x).cpu().detach().numpy()
+    pred_mat = []
+    print(f"### {images[n].img_name} ###")
+    for i in range(32):
+        row = y_pred[11*i:11*i+11]
+        row_dat = row[:5]
+        row_prob = row[5:]
+        row_prob = np.exp(row_prob) / sum(np.exp(row_prob))
+        lst = list(row_dat) + list(row_prob)
+        if max(list(row_prob)) > 0.17:
+            print(f"Found object in window {i} with following probabilities: ")
+            print(list(row_prob))
+
+        pred_mat.append(lst)
+    pred_mat = np.array(pred_mat)
     pass
 
 
