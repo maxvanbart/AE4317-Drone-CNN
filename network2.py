@@ -23,7 +23,7 @@ def main():
     # Create an empty list to store the initialized image objects
     images = []
     # Load the images in the desired range for verification
-    for i in tqdm(range(1000, 1100)):
+    for i in tqdm(range(2000, 2100)):
         # Extract the indexed json format things
         dat = data[i]
 
@@ -76,9 +76,9 @@ def main():
         if row_dat[4] > 0:
             # Print the index of the grid cell where an object was detected and the row of probabilities
             print(f"Found object in window {i} with following probabilities: ")
-            columns = ["pillar", "black board", "white board", "plant", "forest", "qr code"]
-            df = pd.DataFrame(np.array(row_prob), columns=columns)
-            print(df)
+            #columns = ["pillar", "black board", "white board", "plant", "forest", "qr code"]
+            #df = pd.DataFrame(np.array(row_prob), columns=columns)
+            print(row_prob)
 
         pred_mat.append(lst)
     # Make a full 2d prediction such that this can be accessed in the debugger
