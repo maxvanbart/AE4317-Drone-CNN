@@ -13,6 +13,7 @@ from tqdm import tqdm
 w = 240
 h = 520
 
+# run on GPU if available
 if torch.cuda.is_available():
     dev = "cuda:0"
 else:
@@ -31,6 +32,7 @@ class Image:
     def to_output(self):
         # print(f"### {self.img_name} ###")
         self.y = [0] * 352
+        # find centroid of each object class
         for thing in self.objects:
             i = int(thing[1]['x']) // 65
             j = int(thing[1]['y']) // 60
@@ -80,65 +82,46 @@ class Image:
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
-        self.c1 = nn.Conv2d(3, 192, 7, stride=2, padding=3, device=device)
+        #define network layers
+        self.mp0 = nn.MaxPool2d(2)
+        self.c1 = nn.Conv2d(3, 100, 7, stride=2, padding=3, device=device)
         self.r1 = nn.LeakyReLU()
         self.mp1 = nn.MaxPool2d(2)
 
-        self.c2 = nn.Conv2d(192, 256, 3, padding=1, device=device)
+        self.c2 = nn.Conv2d(100, 100, 3, padding=1, device=device)
         self.r2 = nn.LeakyReLU()
         self.mp2 = nn.MaxPool2d(2)
 
-        self.c3 = nn.Conv2d(256, 128, 1, device=device)
-        self.r3 = nn.LeakyReLU()
-        self.c4 = nn.Conv2d(128, 256, 3, padding=1, device=device)
-        self.r4 = nn.LeakyReLU()
-        self.c5 = nn.Conv2d(256, 256, 1, device=device)
-        self.r5 = nn.LeakyReLU()
-        self.c6 = nn.Conv2d(256, 512, 3, padding=1, device=device)
+        self.c3 = nn.Conv2d(100, 64, 1, device=device)
+        self.r3 = nn.ReLU()
+        self.c4 = nn.Conv2d(64, 100, 3, padding=1, device=device)
+        self.r4 = nn.ReLU()
+        self.c6 = nn.Conv2d(100, 150, 3, padding=1, device=device)
         self.r6 = nn.LeakyReLU()
         self.mp3 = nn.MaxPool2d(2)
 
-        self.c7 = nn.Conv2d(512, 256, 1, device=device)
-        self.r7 = nn.LeakyReLU()
-        self.c8 = nn.Conv2d(256, 512, 3, padding=1, device=device)
-        self.r8 = nn.LeakyReLU()
-        self.c9 = nn.Conv2d(512, 256, 1, device=device)
-        self.r9 = nn.LeakyReLU()
-        self.c10 = nn.Conv2d(256, 512, 3, padding=1, device=device)
-        self.r10 = nn.LeakyReLU()
-        self.c11 = nn.Conv2d(512, 256, 1, device=device)
-        self.r11 = nn.LeakyReLU()
-        self.c12 = nn.Conv2d(256, 512, 3, padding=1, device=device)
-        self.r12 = nn.LeakyReLU()
-        self.c13 = nn.Conv2d(512, 256, 1, device=device)
-        self.r13 = nn.LeakyReLU()
-        self.c14 = nn.Conv2d(256, 512, 3, padding=1, device=device)
-        self.r14 = nn.LeakyReLU()
-        self.c15 = nn.Conv2d(512, 512, 1, device=device)
+        self.c7 = nn.Conv2d(150, 100, 1, device=device)
+        self.r7 = nn.ReLU()
+        self.c8 = nn.Conv2d(100, 150, 3, padding=1, device=device)
+        self.r8 = nn.ReLU()
+        self.c15 = nn.Conv2d(150, 150, 1, device=device)
         self.r15 = nn.LeakyReLU()
-        self.c16 = nn.Conv2d(512, 1024, 3, padding=1, device=device)
-        self.r16 = nn.LeakyReLU()
+        self.c16 = nn.Conv2d(150, 250, 3, padding=1, device=device)
+        self.r16 = nn.ReLU()
         self.mp4 = nn.MaxPool2d(2)
 
-        self.c17 = nn.Conv2d(1024, 512, 1, device=device)
+        self.c17 = nn.Conv2d(250, 150, 1, device=device)
         self.r17 = nn.LeakyReLU()
-        self.c18 = nn.Conv2d(512, 1024, 3, padding=1, device=device)
-        self.r18 = nn.LeakyReLU()
-        self.c19 = nn.Conv2d(1024, 512, 1, device=device)
-        self.r19 = nn.LeakyReLU()
-        self.c20 = nn.Conv2d(512, 1024, 3, padding=1, device=device)
-        self.r20 = nn.LeakyReLU()
-        self.c21 = nn.Conv2d(1024, 1024, 3, padding=1, device=device)
-        self.r21 = nn.LeakyReLU()
-        self.c22 = nn.Conv2d(1024, 1024, 3, stride=2, padding=1, device=device)
-        self.r22 = nn.LeakyReLU()
-
-        self.c23 = nn.Conv2d(1024, 1024, 3, padding=1, device=device)
-        self.r23 = nn.LeakyReLU()
-        self.c24 = nn.Conv2d(1024, 1024, 3, padding=1, device=device)
+        self.c18 = nn.Conv2d(150, 250, 3, padding=1, device=device)
+        self.r18 = nn.ReLU()
+        self.c22 = nn.Conv2d(250, 250, 3, stride=2, padding=1, device=device)
+        self.r22 = nn.ReLU()
+        self.c24 = nn.Conv2d(250, 250, 3, padding=1, device=device)
         self.r24 = nn.LeakyReLU()
 
-        self.layers1 = [self.c1,
+        #construct network architecture
+        self.layers1 = [self.mp0,
+                        self.c1,
                         self.r1,
                         self.mp1,
 
@@ -150,8 +133,6 @@ class Net(nn.Module):
                         self.r3,
                         self.c4,
                         self.r4,
-                        self.c5,
-                        self.r5,
                         self.c6,
                         self.r6,
                         self.mp3,
@@ -160,18 +141,6 @@ class Net(nn.Module):
                         self.r7,
                         self.c8,
                         self.r8,
-                        self.c9,
-                        self.r9,
-                        self.c10,
-                        self.r10,
-                        self.c11,
-                        self.r11,
-                        self.c12,
-                        self.r12,
-                        self.c13,
-                        self.r13,
-                        self.c14,
-                        self.r14,
                         self.c15,
                         self.r15,
                         self.c16,
@@ -182,31 +151,26 @@ class Net(nn.Module):
                         self.r17,
                         self.c18,
                         self.r18,
-                        self.c19,
-                        self.r19,
-                        self.c20,
-                        self.r20,
-                        self.c21,
-                        self.r21,
                         self.c22,
                         self.r22,
 
-                        self.c23,
-                        self.r23,
                         self.c24,
                         self.r24]
 
-        self.l1 = nn.Linear(32768, 4096, device=device)
+        #define fully connected layers
+        self.l1 = nn.Linear(2000, 4096, device=device)
         self.r25 = nn.LeakyReLU()
         self.l2 = nn.Linear(4096, 11 * 8 * 4, device=device)
         self.r26 = nn.LeakyReLU()
 
+        #define fully connected architecture
         self.layers2 = [self.l1,
                         self.r25,
                         self.l2,
                         self.r26]
 
     def forward(self, x):
+        # forward pass of cnn architecture
         for layer in self.layers1:
             # print(x.shape)
             x = layer.forward(x)
@@ -217,6 +181,7 @@ class Net(nn.Module):
             x = layer.forward(x)
         return x
 
+    #reset network parameters after pass
     def init(self):
         for layer in self.layers1 + self.layers2:
             layer.reset_parameters()
@@ -229,7 +194,7 @@ class Net(nn.Module):
                 file = ""
                 weight = layer.weight.detach().numpy()
 
-                # Reduce dimension to three
+                # Reduce dimension of kernal to three
                 for j in range(weight.shape[0]):
                     kernel = weight[j, :, :, :]
                     kernel = np.ndarray.flatten(kernel)
@@ -274,8 +239,7 @@ def main():
     print(f"Data length: {len(data)}.")
 
     images = []
-    # for i in tqdm(range(len(data))):
-    # for j in range(10):
+
     for i in tqdm(range(1)):
         dat = data[i]
 
@@ -291,8 +255,10 @@ def main():
             bbox["x"] = round(t + h / 2)
             bbox["y"] = round(l + w / 2)
 
+            # object type and bounding box dimensions
             tup = (value, bbox)
             thing.objects.append(tup)
+        # add details to images
         images.append(thing)
 
     # Generate all the image input and output data
@@ -312,7 +278,7 @@ def main():
 
     # Optimizer and loss function
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=0.00005, momentum=0.9)
+    optimizer = optim.RMSprop(net.parameters(), lr=0.00005)
 
     # Save the model parameters to a data file
     # net.export_weights()
@@ -320,15 +286,15 @@ def main():
 
     losses = []
 
-    epochs = 12
+    epochs = 10
     for epoch in range(epochs):
         print(f'Starting epoch {epoch}.')
         running_loss = 0.0
-        for j in range(32):
+        for j in range(5):
             # Clear images from memory
             images = []
             # Load new images into memory
-            for i in tqdm(range(200*j, 200*j+200)):
+            for i in tqdm(range(1000*j, 1000*j+1000, 10)):
                 dat = data[i]
 
                 thing = Image(dat["External ID"])
@@ -371,10 +337,15 @@ def main():
         print(running_loss, epoch)
 
     print(losses)
+    # save trained data to model
     torch.save(net.state_dict(), "model/yolo1")
     plt.plot(range(epochs), losses)
     plt.show()
 
-
+# run and time
 if __name__ == "__main__":
+    t0 = time()
     main()
+    t1 = time()
+    dt = t1 - t0
+    print(f"Total run took {dt} seconds.")

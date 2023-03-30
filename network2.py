@@ -21,7 +21,7 @@ def main():
     images = []
     # for i in tqdm(range(len(data))):
     # for j in range(10):
-    for i in tqdm(range(1600, 1700)):
+    for i in tqdm(range(1000, 1100)):
         dat = data[i]
 
         thing = Image(dat["External ID"])
@@ -55,7 +55,8 @@ def main():
         row_prob = row[5:]
         row_prob = np.exp(row_prob) / sum(np.exp(row_prob))
         lst = list(row_dat) + list(row_prob)
-        if max(list(row_prob)) > 0.17:
+        # if max(list(row_prob)) > 0.17:
+        if row_dat[4] > 0:
             print(f"Found object in window {i} with following probabilities: ")
             print(list(row_prob))
 
